@@ -11,6 +11,28 @@
 class sfViewableModelPropelBehavior
 {
   /**
+   * Extends a model with this behavior.
+   * 
+   * @param string $model
+   */
+  static function extendModel($model)
+  {
+    if (!is_subclass_of($model, 'BaseObject'))
+    {
+      throw new InvalidArgumentException(sprintf('The class "%s" is not a subclass of BaseObject.', $model));
+    }
+
+    try
+    {
+      sfPropelBehavior::add($model, array('viewable'));
+    }
+    catch (Exception $e)
+    {
+      // behavior has already been added
+    }
+  }
+
+  /**
    * Removes the supplied object from the cache.
    * 
    * Available options:

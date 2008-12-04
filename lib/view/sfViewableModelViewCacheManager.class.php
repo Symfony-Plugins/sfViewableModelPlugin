@@ -31,6 +31,13 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
       $this->viewableModelCache = include $this->viewableModelCacheFile;
     }
 
+    // extend cached model classes
+    foreach (array_keys($this->viewableModelCache) as $key)
+    {
+      $parts = explode('//', $key);
+      sfViewableModelToolkit::extendModel($parts[0]);
+    }
+
     register_shutdown_function(array($this, 'saveViewableModelCache'));
   }
 
@@ -138,7 +145,7 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
       $pk = join('_', $pk);
     }
 
-    $key = get_class($model).'_'.$pk;
+    $key = get_class($model).'//'.$pk;
 
     return $key;
   }
