@@ -1,0 +1,18 @@
+The `sfViewableModelPlugin` links symfony's view cache to your model and
+automatically removes cached templates when model objects used to build them
+are modified.
+
+Installation
+------------
+
+To install, simply update your application's `config/factories.yml` to include
+the plugin's view cache manager:
+
+    [yml]
+    # /apps/APP/config/factories.yml
+    all:
+      view_cache_manager:
+        sfViewableModelViewCacheManager
+
+Then clear your cache using `symfony cc` and watch how much smarter your
+cache is!
