@@ -11,10 +11,10 @@
 class sfViewableModelViewCacheManager extends sfViewCacheManager
 {
   protected
-    $viewableModelCacheModified = false,
     $viewableModelCache         = array(),
+    $viewableModelClasses       = array(),
     $viewableModelCacheFile     = null,
-    $ignoreNextCheck            = false,
+    $viewableModelCacheModified = false,
     $lastCheckedUri             = null;
 
   /**
@@ -26,19 +26,26 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
 
     $this->viewableModelCacheFile = sfConfig::get('sf_config_cache_dir').'/viewableModel.php';
 
-    if (file_exists($this->viewableModelCacheFile))
+    if (!$this->checkViewableModelCache())
     {
-      $this->viewableModelCache = include $this->viewableModelCacheFile;
+      $this->initializeViewableModelClasses();
     }
 
-    // extend cached model classes
-    foreach (array_keys($this->viewableModelCache) as $key)
+    foreach ($this->viewableModelClasses as $model)
     {
-      $parts = explode('//', $key);
-      sfViewableModelToolkit::extendModel($parts[0]);
+      sfViewableModelToolkit::extendModel($model);
     }
 
     register_shutdown_function(array($this, 'saveViewableModelCache'));
+  }
+
+  /**
+   * Introspects the internal array of model classes.
+   */
+  protected function initializeViewableModelClasses()
+  {
+    $this->viewableModelCacheModified = true;
+    $this->viewableModelClasses = sfViewableModelToolkit::getAllModelClasses();
   }
 
   /**
@@ -145,7 +152,7 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
       $pk = join('_', $pk);
     }
 
-    $key = get_class($model).'//'.$pk;
+    $key = get_class($model).'_'.$pk;
 
     return $key;
   }
@@ -171,13 +178,32 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
   }
 
   /**
+   * Reads the cache of viewable models.
+   * 
+   * @return boolean True if a cached file was read
+   */
+  public function checkViewableModelCache()
+  {
+    if (file_exists($this->viewableModelCacheFile))
+    {
+      list($this->viewableModelCache, $this->viewableModelClasses) = include $this->viewableModelCacheFile;
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Saves the cache of viewable models.
    */
   public function saveViewableModelCache()
   {
     if ($this->viewableModelCacheModified)
     {
-      file_put_contents($this->viewableModelCacheFile, '<?php return '.var_export($this->viewableModelCache, true).';');
+      file_put_contents($this->viewableModelCacheFile, sprintf("<?php\n\nreturn %s;\n", var_export(array(
+        $this->viewableModelCache,
+        $this->viewableModelClasses,
+      ), true)));
     }
   }
 }

@@ -101,6 +101,30 @@ class sfViewableModelToolkit
   }
 
   /**
+   * Returns an array of all model classes.
+   * 
+   * @return array
+   */
+  static public function getAllModelClasses()
+  {
+    $event = sfProjectConfiguration::getActive()->getEventDispatcher()->notifyUntil(new sfEvent(__CLASS__, 'sf_viewable_model_plugin.get_all_model_classes'));
+    if ($event->isProcessed())
+    {
+      return $event->getReturnValue();
+    }
+
+    switch (sfConfig::get('sf_orm'))
+    {
+      case 'propel':
+        return sfViewableModelPropelBehavior::getAllModels();
+      case 'doctrine':
+        throw new Exception('Doctrine version not implemented.');
+      default:
+        throw new LogicException('ORM is neither Propel nor Doctrine. Please connect to "sf_viewable_model_plugin.get_all_model_classes" and add logic for your ORM.');
+    }
+  }
+
+  /**
    * Extends the supplied model with an ORM behavior.
    * 
    * @param string|object $model

@@ -15,7 +15,7 @@ class sfViewableModelPropelBehavior
    * 
    * @param string $model
    */
-  static function extendModel($model)
+  static public function extendModel($model)
   {
     if (!is_subclass_of($model, 'BaseObject'))
     {
@@ -30,6 +30,28 @@ class sfViewableModelPropelBehavior
     {
       // behavior has already been added
     }
+  }
+
+  /**
+   * Returns an array of all model classes.
+   * 
+   * @return array
+   */
+  static public function getAllModels()
+  {
+    $models = array();
+
+    $files = sfFinder::type('file')->name('*MapBuilder.php')->in(sfProjectConfiguration::getActive()->getModelDirs());
+    foreach ($files as $file)
+    {
+      $model = basename($file, 'MapBuilder.php');
+      if (class_exists($model) && is_subclass_of($model, 'BaseObject'))
+      {
+        $models[] = $model;
+      }
+    }
+
+    return $models;
   }
 
   /**
@@ -68,14 +90,7 @@ class sfViewableModelPropelBehavior
 
     if ($options['bubble'])
     {
-      try
-      {
-        $relatedModels = $object->getRelatedViewableModels();
-      }
-      catch (Exception $e)
-      {
-        $relatedModels = self::getRelatedViewableModels($object);
-      }
+      $relatedModels = $object->getRelatedViewableModels();
 
       foreach ($relatedModels as $related)
       {
@@ -85,7 +100,7 @@ class sfViewableModelPropelBehavior
         }
         catch (Exception $e)
         {
-          self::removeFromCache($related, $options);
+          // behavior has not been added
         }
       }
     }
@@ -130,7 +145,7 @@ class sfViewableModelPropelBehavior
           }
         }
 
-        if (!$refObject)
+        if (!isset($refObject))
         {
           $c = new Criteria();
           $c->add($refColumnMap->getFullyQualifiedName(), $value);
