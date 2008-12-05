@@ -25,6 +25,9 @@ class sfViewableModelPluginConfiguration extends sfPluginConfiguration
       case 'propel':
         $this->initializePropelBehavior();
         break;
+      case 'doctrine':
+        // todo
+        break;
     }
   }
 

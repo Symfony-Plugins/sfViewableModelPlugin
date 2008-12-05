@@ -19,6 +19,11 @@ class sfViewableModelToolkit
    */
   static public function getPrimaryKey($object)
   {
+    if (!self::isModelObject($object))
+    {
+      throw new InvalidArgumentException('The supplied argument is not a model object.');
+    }
+
     $event = sfProjectConfiguration::getActive()->getEventDispatcher()->notifyUntil(new sfEvent($object, 'sf_viewable_model_plugin.get_primary_key'));
     if ($event->isProcessed())
     {
@@ -82,22 +87,13 @@ class sfViewableModelToolkit
       switch (sfConfig::get('sf_orm'))
       {
         case 'propel':
-          $ret = $value instanceof BaseObject;
-          break;
+          return $value instanceof BaseObject;
         case 'doctrine':
-          $ret = $value instanceof Doctrine_Record;
-          break;
+          return $value instanceof Doctrine_Record;
         default:
           throw new LogicException('ORM is neither Propel nor Doctrine. Please connect to "sf_viewable_model_plugin.is_model_object" and add logic for your ORM.');
       }
     }
-
-    if ($ret)
-    {
-      self::extendModel($value);
-    }
-
-    return $ret;
   }
 
   /**
@@ -118,7 +114,8 @@ class sfViewableModelToolkit
       case 'propel':
         return sfViewableModelPropelBehavior::getAllModels();
       case 'doctrine':
-        throw new Exception('Doctrine version not implemented.');
+        // todo
+        return array();
       default:
         throw new LogicException('ORM is neither Propel nor Doctrine. Please connect to "sf_viewable_model_plugin.get_all_model_classes" and add logic for your ORM.');
     }
@@ -148,7 +145,7 @@ class sfViewableModelToolkit
         sfViewableModelPropelBehavior::extendModel($model);
         break;
       case 'doctrine':
-        throw new Exception('Doctrine version not implemented.');
+        // todo
         break;
       default:
         throw new LogicException('ORM is neither Propel nor Doctrine. Please connect to "sf_viewable_model_plugin.extend_model" and add logic for your ORM.');
