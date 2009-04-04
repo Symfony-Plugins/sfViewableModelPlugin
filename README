@@ -12,7 +12,7 @@ the plugin's view cache manager:
     # /apps/APP/config/factories.yml
     all:
       view_cache_manager:
-        sfViewableModelViewCacheManager
+        class: sfViewableModelViewCacheManager
 
 Then clear your cache using `symfony cc` and watch how much smarter your
 cache is!
