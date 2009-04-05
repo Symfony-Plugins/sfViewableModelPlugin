@@ -15,7 +15,7 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
     $viewableModelClasses       = array(),
     $viewableModelCacheFile     = null,
     $viewableModelCacheModified = false,
-    $lastCheckedUri             = null;
+    $lastChecked                = array();
 
   /**
    * @see sfViewCacheManager
@@ -51,10 +51,44 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
   /**
    * @see sfViewCacheManager
    */
-  public function isCacheable($internalUri)
+  public function isCacheable($moduleName, $actionName = null)
   {
-    $this->lastCheckedUri = $internalUri;
-    return parent::isCacheable($internalUri);
+    $isCacheable = parent::isCacheable($moduleName, $actionName);
+
+    $this->lastChecked = array($moduleName, $actionName, $isCacheable);
+
+    return $isCacheable;
+  }
+
+  /**
+   * Listens for the template.filter_parameters event.
+   * 
+   * @param   sfEvent $event
+   * @param   array   $parameters
+   * 
+   * @return  array
+   */
+  public function filterTemplateParameters(sfEvent $event, array $parameters)
+  {
+    list($moduleName, $actionName, $isCacheable) = $this->lastChecked;
+
+    if (!$isCacheable)
+    {
+      return $parameters;
+    }
+
+    if ($models = sfViewableModelToolkit::filterModelObjects(sfOutputEscaper::unescape($parameters)))
+    {
+      // generate internal uri, including cache key if necessary
+      $internalUri = is_null($actionName) ? $moduleName : ('partial' == $partial['sf_type'] ? $this->getPartialUri($moduleName, $actionName, $this->checkCacheKey($parameters)) : $this->routing->getCurrentInternalUri());
+
+      foreach ($models as $model)
+      {
+        $this->connectModelToTemplate($model, $internalUri);
+      }
+    }
+
+    return $parameters;
   }
 
   /**
@@ -65,11 +99,6 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
    */
   public function connectModelToTemplate($model, $internalUri)
   {
-    if (!parent::isCacheable($internalUri))
-    {
-      return;
-    }
-
     $key = $this->getModelKey($model);
 
     if (!isset($this->viewableModelCache[$key]))
@@ -155,26 +184,6 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
     $key = get_class($model).'_'.$pk;
 
     return $key;
-  }
-
-  /**
-   * Listens for the template.filter_parameters event.
-   * 
-   * @param   sfEvent $event
-   * @param   array   $parameters
-   * 
-   * @return  array
-   */
-  public function filterTemplateParameters(sfEvent $event, array $parameters)
-  {
-    $models = sfViewableModelToolkit::filterModelObjects(sfOutputEscaper::unescape($parameters));
-
-    foreach ($models as $model)
-    {
-      $this->connectModelToTemplate($model, $this->lastCheckedUri);
-    }
-
-    return $parameters;
   }
 
   /**
