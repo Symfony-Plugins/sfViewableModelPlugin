@@ -51,9 +51,22 @@ class sfViewableModelViewCacheManager extends sfViewCacheManager
   /**
    * @see sfViewCacheManager
    */
-  public function isCacheable($moduleName, $actionName = null)
+  public function isCacheable($internalUri)
   {
-    $isCacheable = parent::isCacheable($moduleName, $actionName);
+    $isCacheable = parent::isCacheable($internalUri);
+
+    list($route_name, $params) = $this->controller->convertUrlStringToParameters($internalUri);
+    $this->lastChecked = array($params['module'], $params['action'], $isCacheable);
+
+    return $isCacheable;
+  }
+
+  /**
+   * @see sfViewCacheManager
+   */
+  public function isActionCacheable($moduleName, $actionName)
+  {
+    $isCacheable = parent::isActionCacheable($moduleName, $actionName);
 
     $this->lastChecked = array($moduleName, $actionName, $isCacheable);
 
